@@ -1,0 +1,26 @@
+# Gyan + MonkDB. Check https://github.com/monkdbofficial/monkdb.docs for the
+# image name/tag your license provides; set MONKDB_IMAGE accordingly.
+services:
+  monkdb:
+    image: ${MONKDB_IMAGE:-monkdb/monkdb:latest}
+    ports:
+      - "4200:4200"
+      - "5432:5432"
+    environment:
+      MONKDB_HEAP_SIZE: 1g
+    volumes:
+      - monkdb-data:/data
+
+  gyan:
+    build: .
+    depends_on: [monkdb]
+    env_file: .env
+    environment:
+      GYAN_STORE: monkdb
+      MONKDB_HOST: monkdb
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "gyan.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+volumes:
+  monkdb-data:

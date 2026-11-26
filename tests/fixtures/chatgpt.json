@@ -1,0 +1,7 @@
+[{"id":"c1","title":"Attention in transformers","create_time":1710000000,"current_node":"n3",
+  "mapping":{
+   "n0":{"id":"n0","message":null,"parent":null,"children":["n1"]},
+   "n1":{"id":"n1","parent":"n0","children":["n2"],"message":{"author":{"role":"user"},"create_time":1710000000,"content":{"content_type":"text","parts":["How does self attention work in transformers?"]}}},
+   "n2":{"id":"n2","parent":"n1","children":["n3"],"message":{"author":{"role":"assistant"},"create_time":1710000010,"content":{"content_type":"text","parts":["Self attention lets every token look at every other token. Each token makes a query, key and value; attention weights come from query-key dot products, softmaxed, then used to mix values."]}}},
+   "n3":{"id":"n3","parent":"n2","children":[],"message":{"author":{"role":"user"},"create_time":1710000020,"content":{"content_type":"text","parts":["thanks"]}}}
+  }}]

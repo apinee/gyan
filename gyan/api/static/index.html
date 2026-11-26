@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gyan</title>
+<style>
+  :root { --bg:#fbfaf7; --fg:#1d1c1a; --muted:#6b675f; --card:#fff; --accent:#c2410c; --line:#e7e3da; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#151412; --fg:#eeeae2; --muted:#a39e94; --card:#1f1d1a; --accent:#fb923c; --line:#2e2b27; } }
+  body { margin:0; font:16px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width:720px; margin:0 auto; padding:24px 16px; }
+  h1 { margin:0 0 4px; } .muted { color:var(--muted); }
+  nav button, .btn { border:1px solid var(--line); background:var(--card); color:var(--fg); padding:8px 14px; border-radius:8px; cursor:pointer; }
+  nav { display:flex; gap:8px; flex-wrap:wrap; margin:16px 0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:12px 0; }
+  input { width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); }
+  #stats { font-weight:600; color:var(--accent); }
+</style>
+</head>
+<body><main>
+  <h1>ज्ञान · Gyan</h1>
+  <div class="muted">Everything you learned from AI chats — back when you need it.</div>
+  <div id="stats"></div>
+  <nav>
+    <button onclick="showDaily()">Daily 5</button>
+    <button onclick="showAsk()">Ask my brain</button>
+    <button onclick="showWrapped()">Wrapped</button>
+  </nav>
+  <section id="view"></section>
+  <!-- TODO: knowledge constellation (force-directed graph from /graph), import page, mastery garden -->
+</main>
+<script>
+const $ = s => document.querySelector(s), view = $('#view');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function j(url, opts) { const r = await fetch(url, opts); return r.json(); }
+async function refreshStats() { const s = await j('/stats'); $('#stats').textContent = `🔥 ${s.streak}-day streak · ⭐ ${s.xp} XP · level ${s.level} · ${s.atoms} ideas`; }
+
+async function showDaily() {
+  const d = await j('/daily');
+  let html = '';
+  if (d.asked_again.length) html += `<div class="card">🔁 You keep asking about <b>${d.asked_again.map(c=>esc(c.name)).join(', ')}</b></div>`;
+  d.surprise.forEach(a => html += `<div class="card">🎁 <b>${esc(a.title)}</b><br>${esc(a.summary)}</div>`);
+  view.innerHTML = html + '<div id="deck"></div>';
+  drill(d.due);
+}
+function drill(cards) {
+  const deck = $('#deck');
+  if (!cards.length) { deck.innerHTML = '<div class="card">🎉 Nothing due — come back tomorrow.</div>'; return; }
+  const [card, ...rest] = cards;
+  deck.innerHTML = `<div class="card"><b>❓ ${esc(card.front)}</b><div id="ans" hidden><p>✅ ${esc(card.back)}</p>
+    ${[['Again',1],['Hard',2],['Good',3],['Easy',4]].map(([l,g]) => `<button class="btn" data-g="${g}">${l}</button>`).join(' ')}</div>
+    <p><button class="btn" id="reveal">Reveal</button></p></div>`;
+  $('#reveal').onclick = () => { $('#ans').hidden = false; $('#reveal').remove(); };
+  deck.querySelectorAll('[data-g]').forEach(b => b.onclick = async () => {
+    await j('/review', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({card, grade: +b.dataset.g})});
+    refreshStats(); drill(rest);
+  });
+}
+function showAsk() {
+  view.innerHTML = '<input id="q" placeholder="What did I learn about…?"><div id="hits"></div>';
+  $('#q').onkeydown = async e => { if (e.key !== 'Enter') return;
+    const hits = await j('/ask?q=' + encodeURIComponent(e.target.value));
+    $('#hits').innerHTML = hits.map(h => `<div class="card"><b>${esc(h.atom.title)}</b><p>💡 ${esc(h.atom.summary)}</p>
+      ${h.atom.hook ? `<p>🪝 ${esc(h.atom.hook)}</p>` : ''}<div class="muted">📍 ${esc(h.source)}</div></div>`).join('') || '<p class="muted">Nothing yet.</p>';
+  };
+  $('#q').focus();
+}
+async function showWrapped() {
+  const w = await j('/wrapped');
+  view.innerHTML = `<div class="card"><h2>Your week in Gyan</h2><p>${w.new_atoms} new ideas · ${w.reviews} reviews · ${w.xp} XP</p>
+    <p>Top topics: ${w.top_topics.map(([t,n]) => `${esc(t)} (${n})`).join(', ') || '—'}</p></div>`;
+}
+refreshStats(); showDaily();
+</script>
+</body></html>

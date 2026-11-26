@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gyan"
+version = "0.1.0"
+description = "Turn your AI chats (ChatGPT, Claude, Gemini...) into a recallable knowledge graph."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "pydantic>=2.5",
+  "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+llm = ["anthropic>=0.40"]
+monkdb = ["monkdb>=1.0.5"]
+embed = ["sentence-transformers>=2.7"]
+api = ["fastapi>=0.110", "uvicorn>=0.29"]
+mcp = ["mcp>=1.0"]
+dev = ["pytest>=8"]
+all = ["gyan[llm,monkdb,embed,api,mcp,dev]"]
+
+[project.scripts]
+gyan = "gyan.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["gyan*"]
+
+[tool.setuptools.package-data]
+gyan = ["store/*.sql", "api/static/*"]
